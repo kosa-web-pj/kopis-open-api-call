@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Show">
+    <insert id="insertShow" parameterType="Show">
+        INSERT INTO SHOW VALUES (#{showId}, #{genreId}, #{showName}, #{showStartDay},
+        #{showEndDay}, #{showTime}, #{showAge}, #{showAddress}, #{showVenues}, #{showTicketingSite},
+        #{showStory}, #{showImage1}, #{showImage2}, #{showImage3}, #{showImage4}, #{showStatus}, #{showLatitude},
+        #{showLongitude}, #{showRuntime}, #{showPoster})
+    </insert>
+    <select id="selectShowById" parameterType="String" resultType="Show">
+        SELECT * FROM SHOW WHERE show_id = #{id}
+    </select>
+</mapper>

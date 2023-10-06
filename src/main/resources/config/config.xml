@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <settings>
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+        <setting name="jdbcTypeForNull" value="VARCHAR"/>
+    </settings>
+
+    <typeAliases>
+        <typeAlias type="com.kosa.showfan.show.dto.ShowDTO" alias="Show"/>
+        <typeAlias type="com.kosa.showfan.seat.dto.SeatDTO" alias="Seat"/>
+        <typeAlias type="com.kosa.showfan.artist.dto.ArtistDTO" alias="Artist"/>
+        <typeAlias type="com.kosa.showfan.cast.dto.CastDTO" alias="Cast"/>
+    </typeAliases>
+
+    <environments default="development">
+        <environment id="development">
+            <transactionManager type="JDBC"/>
+            <dataSource type="POOLED">
+                <property name="driver" value="oracle.jdbc.driver.OracleDriver"/>
+                <!--need data-->
+                <property name="url"
+                          value=""/>
+                <property name="username" value=""/>
+                <property name="password" value=""/>
+            </dataSource>
+        </environment>
+    </environments>
+
+    <mappers>
+        <mapper resource="sqlmap/Show.xml"/>
+        <mapper resource="sqlmap/Artist.xml"/>
+        <mapper resource="sqlmap/Seat.xml"/>
+        <mapper resource="sqlmap/Cast.xml"/>
+    </mappers>
+
+</configuration>

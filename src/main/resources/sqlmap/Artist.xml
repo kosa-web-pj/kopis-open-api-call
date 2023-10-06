@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Show">
+    <insert id="insertArtist" parameterType="Artist">
+        INSERT INTO ARTIST VALUES (ARTIST_SEQ.NEXTVAL, #{artistName}, #{artistImage})
+    </insert>
+    <select id="selectArtistByName" parameterType="String" resultType="Artist">
+        SELECT * FROM ARTIST WHERE artist_name = #{name}
+    </select>
+</mapper>

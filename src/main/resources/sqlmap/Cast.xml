@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Show">
+    <insert id="insertCast" parameterType="Cast">
+        INSERT INTO CAST VALUES (#{artistId}, #{showId})
+    </insert>
+    <select id="selectCastByShowId" parameterType="String" resultType="Cast">
+        SELECT * FROM CAST WHERE show_id = #{showId}
+    </select>
+</mapper>
