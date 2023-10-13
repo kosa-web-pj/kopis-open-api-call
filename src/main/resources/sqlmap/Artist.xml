@@ -2,7 +2,7 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="Show">
+<mapper namespace="Artist">
     <insert id="insertArtist" parameterType="Artist">
         INSERT INTO ARTIST VALUES (ARTIST_SEQ.NEXTVAL, #{artistName}, #{artistImage})
     </insert>

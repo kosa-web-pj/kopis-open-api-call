@@ -13,7 +13,7 @@ import java.io.*;
 import java.net.URL;
 
 public class AWSService {
-    //need data
+    // need data
     private static final String BUCKET_NAME = "";
     private static final String ACCESS_KEY = "";
     private static final String SECRET_KEY = "";

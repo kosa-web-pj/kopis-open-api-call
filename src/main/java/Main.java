@@ -27,7 +27,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 
 public class Main {
     private static final String url = "http://www.kopis.or.kr/openApi/restful";
@@ -37,33 +39,34 @@ public class Main {
     public static void main(String[] args) {
         // 테스트
         // 축제 목록 처리
-        String requestAPI = String.format("%s/prffest?service=%s&stdate=20230801&eddate=20230831&rows=10&cpage=1", url, key);
-        insertDataToDB(requestAPI, true);
+//        String requestAPI = String.format("%s/prffest?service=%s&stdate=20230801&eddate=20230831&rows=10&cpage=4", url, key);
+//        insertDataToDB(requestAPI, true);
 
         // 나머지 공연 처리
-        requestAPI = String.format("%s/pblprfr?service=%s&stdate=20230801&eddate=20230831&rows=10&cpage=1", url, key);
-        insertDataToDB(requestAPI, false);
+//        String requestAPI = String.format("%s/pblprfr?service=%s&stdate=20230801&eddate=20230831&rows=10&cpage=1", url, key);
+//        insertDataToDB(requestAPI, false);
 
         // 반복
-        // 총 검색 건수 : 6,857
-//        for (int i = 1; i < 686; i++) {
+        // 총 검색 건수 : 6,879
+//        for (int i = 1; i <= 1; i++) {
 //            String startdate = "20140101";
 //            String enddate = "20231212";
-//            String requestAPILoop = String.format("%s/prffest?service=%s&stdate=%s&eddate=%s&rows=10&cpage=%d", url, key, startdate, enddate, i);
+//            String requestAPILoop = String.format("%s/prffest?service=%s&stdate=%s&eddate=%s&rows=6879&cpage=%d", url, key, startdate, enddate, i);
 //            insertDataToDB(requestAPILoop, true);
 //        }
-        // 총 검색 건수 : 77,956
-//        for (int i = 1; i < 7796; i++) {
-//            String startdate = "20140101";
-//            String enddate = "20231212";
-//            String requestAPILoop = String.format("%s/pblprfr?service=%s&stdate=%s&eddate=%s&rows=10&cpage=%d", url, key, startdate, enddate, i);
-//            insertDataToDB(requestAPILoop, false);
-//        }
+        // 총 검색 건수 : 84,987
+        for (int i = 1; i <= 8; i++) {
+            String startdate = "20140101";
+            String enddate = "20231212";
+            String requestAPILoop = String.format("%s/pblprfr?service=%s&stdate=%s&eddate=%s&rows=10000&cpage=%d", url, key, startdate, enddate, i);
+            insertDataToDB(requestAPILoop, false);
+        }
     }
 
     private static void insertDataToDB(String requestAPI, boolean isFestival) {
         try {
             NodeList festivalListNode = getHttpData(requestAPI);
+            System.out.println("data call success");
             // 공연 목록 파싱
             for (int i = 0; i < festivalListNode.getLength(); i++) {
                 ShowDAO showDAO = new ShowDAO(MyBatisConnectionFactory.getSqlSessionFactory());
@@ -74,8 +77,8 @@ public class Main {
                     Element element = (Element) node;
                     String showId = getValue("mt20id", element);
                     // 현재 DB에 없는 경우 DB에 데이터 삽입
-                    System.out.println(showDAO.selectById(showId) == null);
                     if (showDAO.selectById(showId) == null) {
+//                    if (true) {
                         showDTO.setShowId(showId);
                         if (isFestival) {
                             showDTO.setGenreId(5L);
@@ -83,7 +86,7 @@ public class Main {
                             String genre = getValue("genrenm", element);
                             if (genre.equals("연극")) {
                                 showDTO.setGenreId(1L);
-                            } else if (genre.equals("클래식(서양음악)")) {
+                            } else if (genre.equals("서양음악(클래식)")) {
                                 showDTO.setGenreId(3L);
                             } else if (genre.equals("대중음악")) {
                                 showDTO.setGenreId(4L);
@@ -133,54 +136,37 @@ public class Main {
                                 showDTO.setShowStatus(checkNull(getValue("prfstate", element)));
                                 showDTO.setShowRuntime(checkNull(getValue("prfruntime", element)));
 
-                                // cast, artist 데이터 삽입
-                                String artistName = checkNull(getValue("prfcast", element));
-                                if (artistName != null) {
-                                    ArtistDAO artistDAO = new ArtistDAO(MyBatisConnectionFactory.getSqlSessionFactory());
-                                    ArtistDTO artistDTO = new ArtistDTO();
-                                    CastDAO castDAO = new CastDAO(MyBatisConnectionFactory.getSqlSessionFactory());
-                                    CastDTO castDTO = new CastDTO();
-                                    if (artistName.substring(artistName.length() - 2, artistName.length() - 1).equals(" 등")) {
-                                        artistName = artistName.substring(0, artistName.length() - 3);
-                                    }
-                                    String[] artists = artistName.split(", ");
-
-                                    boolean isCastExist = true;
-                                    if (castDAO.selectByShowId(showId) == null) {
-                                        isCastExist = false;
-                                    }
-                                    for (String artist : artists) {
-                                        if (artistDAO.selectByName(artist) == null) {
-                                            artistDTO.setArtistName(artist);
-                                            artistDTO.setArtistImage(null);
-                                            artistDAO.insert(artistDTO);
-                                        }
-                                        if (!isCastExist) {
-                                            castDTO.setShowId(showId);
-                                            long artistId = artistDAO.selectByName(artist).getArtistId();
-                                            castDTO.setArtistId(artistId);
-                                            castDAO.insert(castDTO);
-                                        }
-                                    }
-                                }
-
-                                // 공연 가격 데이터 삽입
-                                String ticketPrice = checkNull(getValue("pcseguidance", element));
-                                if (ticketPrice != null) {
-                                    SeatDAO seatDAO = new SeatDAO(MyBatisConnectionFactory.getSqlSessionFactory());
-                                    SeatDTO seatDTO = new SeatDTO();
-                                    String[] seatPrice = ticketPrice.split("원 ");
-
-                                    boolean isSeat = true;
-                                    if (seatDAO.selectByShowId(showId) == null) {
-                                        isSeat = false;
-                                    }
-                                    if (!isSeat) {
-                                        for (String price : seatPrice) {
-                                            seatDTO.setSeatName(price.split(" ")[0]);
-                                            seatDTO.setSeatPrice(Integer.parseInt(price.split(" ")[1]));
-                                            seatDTO.setShowId(showId);
-                                            seatDAO.insert(seatDTO);
+                                if (element.getElementsByTagName("styurls").getLength() > 0) {
+                                    NodeList imageListNode = element.getElementsByTagName("styurls").item(0).getChildNodes();
+                                    for (int l = 0; l < imageListNode.getLength(); l++) {
+                                        if (l == 1) {
+                                            String image = imageListNode.item(l).getChildNodes().item(0).getNodeValue();
+                                            if (image != null) {
+                                                AWSService subS3 = new AWSService();
+                                                subS3.uploadFile(showId + "_1", image);
+                                                showDTO.setShowImage1(String.format("https://showfan.s3.ap-northeast-2.amazonaws.com/%s_1.jpg", showId));
+                                            }
+                                        } else if (l == 3) {
+                                            String image = imageListNode.item(l).getChildNodes().item(0).getNodeValue();
+                                            if (image != null) {
+                                                AWSService subS3 = new AWSService();
+                                                subS3.uploadFile(showId + "_2", image);
+                                                showDTO.setShowImage2(String.format("https://showfan.s3.ap-northeast-2.amazonaws.com/%s_2.jpg", showId));
+                                            }
+                                        } else if (l == 5) {
+                                            String image = imageListNode.item(l).getChildNodes().item(0).getNodeValue();
+                                            if (image != null) {
+                                                AWSService subS3 = new AWSService();
+                                                subS3.uploadFile(showId + "_3", image);
+                                                showDTO.setShowImage3(String.format("https://showfan.s3.ap-northeast-2.amazonaws.com/%s_3.jpg", showId));
+                                            }
+                                        } else if (l == 7) {
+                                            String image = imageListNode.item(l).getChildNodes().item(0).getNodeValue();
+                                            if (image != null) {
+                                                AWSService subS3 = new AWSService();
+                                                subS3.uploadFile(showId + "_4", image);
+                                                showDTO.setShowImage4(String.format("https://showfan.s3.ap-northeast-2.amazonaws.com/%s_4.jpg", showId));
+                                            }
                                         }
                                     }
                                 }
@@ -192,53 +178,82 @@ public class Main {
                                 for (int k = 0; k < DetailVenueNode.getLength(); k++) {
                                     node = DetailVenueNode.item(k);
                                     if (node.getNodeType() == Node.ELEMENT_NODE) {
-                                        element = (Element) node;
-                                        showDTO.setShowAddress(checkNull(getValue("adres", element)));
-                                        showDTO.setShowVenues(checkNull(getValue("fcltynm", element)));
-                                        if (checkNull(getValue("la", element)) != null) {
-                                            showDTO.setShowLatitude(Double.parseDouble(getValue("la", element)));
+                                        Element venueElement = (Element) node;
+                                        showDTO.setShowAddress(checkNull(getValue("adres", venueElement)));
+                                        showDTO.setShowVenues(checkNull(getValue("fcltynm", venueElement)));
+                                        if (checkNull(getValue("la", venueElement)) != null) {
+                                            showDTO.setShowLatitude(Double.parseDouble(getValue("la", venueElement)));
                                         }
-                                        if (checkNull(getValue("lo", element)) != null) {
-                                            showDTO.setShowLongitude(Double.parseDouble(getValue("lo", element)));
-                                        }
-                                    }
-                                    NodeList imageListNode = element.getElementsByTagName("styurls");
-                                    for (int l = 0; l < imageListNode.getLength(); l++) {
-                                        node = imageListNode.item(l);
-                                        if (node.getNodeType() == Node.ELEMENT_NODE) {
-                                            element = (Element) node;
-
-                                            if (l == 2) {
-                                                String image = checkNull(getValue("styurl", element));
-                                                if (image != null) {
-                                                    s3.uploadFile(showId + "_1", image);
-                                                    showDTO.setShowImage1(String.format("https://showfan.s3.ap-northeast-2.amazonaws.com/%s_1.jpg", showId));
-                                                }
-                                            } else if (l == 4) {
-                                                String image = checkNull(getValue("styurl", element));
-                                                if (image != null) {
-                                                    s3.uploadFile(showId + "_2", image);
-                                                    showDTO.setShowImage1(String.format("https://showfan.s3.ap-northeast-2.amazonaws.com/%s_2.jpg", showId));
-                                                }
-                                            } else if (l == 6) {
-                                                String image = checkNull(getValue("styurl", element));
-                                                if (image != null) {
-                                                    s3.uploadFile(showId + "_3", image);
-                                                    showDTO.setShowImage1(String.format("https://showfan.s3.ap-northeast-2.amazonaws.com/%s_3.jpg", showId));
-                                                }
-                                            } else if (l == 8) {
-                                                String image = checkNull(getValue("styurl", element));
-                                                if (image != null) {
-                                                    s3.uploadFile(showId + "_4", image);
-                                                    showDTO.setShowImage1(String.format("https://showfan.s3.ap-northeast-2.amazonaws.com/%s_4.jpg", showId));
-                                                }
-                                            }
+                                        if (checkNull(getValue("lo", venueElement)) != null) {
+                                            showDTO.setShowLongitude(Double.parseDouble(getValue("lo", venueElement)));
                                         }
                                     }
                                 }
                             }
                         }
                         showDAO.insert(showDTO);
+
+                        // cast, artist 데이터 삽입
+                        String artistName = checkNull(getValue("prfcast", element));
+                        if (artistName != null) {
+                            ArtistDAO artistDAO = new ArtistDAO(MyBatisConnectionFactory.getSqlSessionFactory());
+                            ArtistDTO artistDTO = new ArtistDTO();
+                            CastDAO castDAO = new CastDAO(MyBatisConnectionFactory.getSqlSessionFactory());
+                            CastDTO castDTO = new CastDTO();
+                            if (artistName.trim().substring(artistName.length() - 2).equals(" 등")) {
+                                artistName = artistName.substring(0, artistName.length() - 2);
+                            }
+                            String[] artists = artistName.split(", ");
+
+                            boolean isCastExist = true;
+                            if (castDAO.selectByShowId(showId).size() == 0) {
+                                isCastExist = false;
+                            }
+                            HashSet<String> hashSet = new HashSet<>(Arrays.asList(artists));
+                            artists = hashSet.toArray(new String[0]);
+                            for (String artist : artists) {
+                                if (artistDAO.selectByName(artist) == null) {
+                                    artistDTO.setArtistName(artist);
+                                    artistDTO.setArtistImage(null);
+                                    artistDAO.insert(artistDTO);
+                                }
+                                if (!isCastExist) {
+                                    castDTO.setShowId(showId);
+                                    long artistId = artistDAO.selectByName(artist).getArtistId();
+                                    castDTO.setArtistId(artistId);
+                                    castDAO.insert(castDTO);
+                                }
+                            }
+                        }
+
+                        // 공연 가격 데이터 삽입
+                        String ticketPrice = checkNull(getValue("pcseguidance", element));
+                        if (ticketPrice != null) {
+                            SeatDAO seatDAO = new SeatDAO(MyBatisConnectionFactory.getSqlSessionFactory());
+                            SeatDTO seatDTO = new SeatDTO();
+                            String[] seatPrice = ticketPrice.trim().split(", ");
+                            boolean isSeat = true;
+                            if (seatDAO.selectByShowId(showId).size() == 0) {
+                                isSeat = false;
+                            }
+                            if (!isSeat) {
+                                for (String price : seatPrice) {
+                                    String seatName = "";
+                                    int priceLength = price.split(" ").length;
+                                    for (int p = 0; p < priceLength - 1; p++) {
+                                        seatName += price.split(" ")[p];
+                                    }
+                                    seatDTO.setSeatName(seatName);
+                                    int priceNumber = 0;
+                                    if (priceLength != 1) {
+                                        priceNumber = Integer.parseInt(price.split(" ")[priceLength - 1].replaceAll("[^0-9]", ""));
+                                    }
+                                    seatDTO.setSeatPrice(priceNumber);
+                                    seatDTO.setShowId(showId);
+                                    seatDAO.insert(seatDTO);
+                                }
+                            }
+                        }
                     }
                     System.out.println(showDAO.selectById(showId));
                     System.out.println("----------------------" + i + " " + festivalListNode.getLength());
@@ -253,7 +268,8 @@ public class Main {
         CloseableHttpClient httpClient = HttpClients.createDefault();
         HttpGet httpGet = new HttpGet(requestAPI);
         CloseableHttpResponse httpResponse = httpClient.execute(httpGet);
-        System.out.println(httpResponse.getStatusLine());
+        // check api status
+//        System.out.println(httpResponse.getStatusLine());
         BufferedReader br = new BufferedReader(new InputStreamReader(httpResponse.getEntity().getContent()));
         String inputLine;
         StringBuffer res = new StringBuffer();
@@ -272,7 +288,6 @@ public class Main {
 
         Element root = doc.getDocumentElement();
         NodeList children = root.getChildNodes();
-
         httpClient.close();
         return children;
     }

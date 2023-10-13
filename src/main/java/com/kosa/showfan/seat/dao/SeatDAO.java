@@ -31,7 +31,7 @@ public class SeatDAO {
         List<SeatDTO> seatDTOList = null;
         SqlSession session = sqlSessionFactory.openSession();
         try {
-            seatDTOList = session.selectList("Cast.selectSeatByShowId", showId);
+            seatDTOList = session.selectList("Seat.selectSeatByShowId", showId);
         } finally {
             session.close();
         }
